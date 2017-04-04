@@ -14,5 +14,5 @@
 !var/SymfonyRequirements.php
 /vendor/
 /web/bundles/
-/./idea/
+.idea/*
 src/Letunovskiymn/KorablikBundle/Resources/config/parameters.yml
