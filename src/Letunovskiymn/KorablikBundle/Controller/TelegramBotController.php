@@ -7,13 +7,14 @@
  */
 
 namespace Letunovskiymn\KorablikBundle\Controller;
+use Letunovskiymn\KorablikBundle\Telegram\Telegram;
 use Longman\TelegramBot\Exception\TelegramException;
 use Longman\TelegramBot\Exception\TelegramLogException;
-use Longman\TelegramBot\Telegram;
 use Longman\TelegramBot\TelegramLog;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Process\Process;
 
 
 class TelegramBotController extends Controller
@@ -38,10 +39,24 @@ class TelegramBotController extends Controller
         //    'database' => 'dbname',
         //];
 
+
+        $pathExe=$this->container->get('kernel')->locateResource('@LetunovskiymnKorablikBundle').'Ansible';
+//
+//        $keyboards[] = new Keyboard(
+//            ['7', '8', '9'],
+//            ['4', '5', '6'],
+//            ['1', '2', '3'],
+//            [' ', '0', ' ']
+//        );
+
+        $process = new Process('cd '.$pathExe.' && ansible-playbook git.yml -vvvv');
+        $process->run();
+        var_dump($process->getOutput());
+
         try {
             // Create Telegram API object
             $telegram =new Telegram($key, $bot_name);
-
+            $telegram->setContainer($this->container);
             // Error, Debug and Raw Update logging
             //Longman\TelegramBot\TelegramLog::initialize($your_external_monolog_instance);
             //Longman\TelegramBot\TelegramLog::initErrorLog($path . '/' . $BOT_NAME . '_error.log');
