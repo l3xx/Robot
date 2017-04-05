@@ -42,17 +42,6 @@ class TelegramBotController extends Controller
 
         $pathExe=$this->container->get('kernel')->locateResource('@LetunovskiymnKorablikBundle').'Ansible';
 //
-//        $keyboards[] = new Keyboard(
-//            ['7', '8', '9'],
-//            ['4', '5', '6'],
-//            ['1', '2', '3'],
-//            [' ', '0', ' ']
-//        );
-
-        $process = new Process('cd '.$pathExe.' && ansible-playbook git.yml -vvvv');
-        $process->run();
-        var_dump($process->getOutput());
-
         try {
             // Create Telegram API object
             $telegram =new Telegram($key, $bot_name);

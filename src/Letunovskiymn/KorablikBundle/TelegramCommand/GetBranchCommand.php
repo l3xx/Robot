@@ -14,6 +14,7 @@ use Bitbucket\API\Repositories;
 use Bitbucket\API\Teams;
 use Bitbucket\API\User;
 use Longman\TelegramBot\Commands\UserCommand;
+use Longman\TelegramBot\Entities\InlineKeyboard;
 use Longman\TelegramBot\Entities\Keyboard;
 use Longman\TelegramBot\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -39,24 +40,15 @@ class GetBranchCommand extends UserCommand
      */
     public function execute()
     {
-        /** @var ContainerInterface $container */
-        $container=$this->telegram->container;
+        $message = $this->getMessage();
+        $chat_id = $message->getChat()->getId();
 
+        $data = [];
+        $data['chat_id'] = $chat_id;
 
-//        $keyboards[] = new Keyboard(
-//            ['7', '8', '9'],
-//            ['4', '5', '6'],
-//            ['1', '2', '3'],
-//            [' ', '0', ' ']
-//        );
+        $text = 'asd';
 
-        $chat_id = $this->getMessage()->getChat()->getId();
-
-        $data = [
-            'chat_id'      => $chat_id,
-            'text'         =>'sdf',
-//            'reply_markup' => Keyboard::forceReply(),
-        ];
+        $data['text'] = $text;
 
         return Request::sendMessage($data);
     }
