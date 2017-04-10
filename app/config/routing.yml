@@ -3,6 +3,11 @@ app:
     type: annotation
 
 letunovskiymn_korablik:
-    resource: "@LetunovskiymnKorablikBundle/Controller/"
+    resource: "@LetunovskiymnKorablikBundle/Controller/TelegramBotController.php"
     prefix: /korablik-bot
+    type: annotation
+
+letunovskiymn_korablik_zabbix:
+    resource: "@LetunovskiymnKorablikBundle/Controller/TelegramZabbixBotController.php"
+    prefix: /zabbix-bot
     type: annotation

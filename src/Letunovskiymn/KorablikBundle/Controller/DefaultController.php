@@ -14,6 +14,8 @@ class DefaultController extends Controller
      */
     public function indexAction()
     {
+
+        $conn=$this->getDoctrine();
         return $this->render('LetunovskiymnKorablikBundle:Default:index.html.twig');
     }
 }
