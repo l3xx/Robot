@@ -15,3 +15,5 @@
 /vendor/
 /web/bundles/
 .idea/*
+src/Letunovskiymn/KorablikBundle/Resources/config/parameters.yml
+src/Letunovskiymn/SMSReaderBundle/Resources/config/parameters.yml
