@@ -1,3 +1,8 @@
+letunovskiymn_sms_reader:
+    resource: "@LetunovskiymnSMSReaderBundle/Controller/"
+    type:     annotation
+    prefix:   /sms-reader
+
 app:
     resource: '@AppBundle/Controller/'
     type: annotation
