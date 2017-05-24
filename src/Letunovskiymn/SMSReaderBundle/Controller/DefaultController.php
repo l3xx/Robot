@@ -3,6 +3,7 @@
 namespace Letunovskiymn\SMSReaderBundle\Controller;
 
 use Letunovskiymn\SMSReaderBundle\Entity\Device;
+use Letunovskiymn\SMSReaderBundle\Entity\Message;
 use Letunovskiymn\SMSReaderBundle\Telegram\Telegram;
 use Longman\TelegramBot\Exception\TelegramException;
 use Longman\TelegramBot\Exception\TelegramLogException;
@@ -10,6 +11,7 @@ use Longman\TelegramBot\TelegramLog;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class DefaultController extends Controller
@@ -179,7 +181,43 @@ class DefaultController extends Controller
     }
 
 
+    /**
+     * @Route("/set-message/{guid}", name="smsreader_set_message")
+     * @param Request $request
+     * @param null $guid
+     * @return JsonResponse
+     */
+    public function setMessageAction(Request $request,$guid=null)
+    {
+        $result=['guid'=>$guid];
+        $postDataMessage = $request->request->get('message',null);
+        $postDataFrom= $request->request->get('from',null);
 
+        if ($guid){
+            /** @var Device $device */
+            $device = $this->getDoctrine()
+                ->getRepository('LetunovskiymnSMSReaderBundle:Device')
+                ->findOneBy(['guid'=>$guid]);
+
+            if (!$device) {
+                throw $this->createNotFoundException(
+                    'No device found for id '.$guid
+                );
+            }
+            $message = new Message();
+            $message ->setMessage($postDataMessage);
+            $message ->setDeviceId($device);
+            $message ->setFromUser($postDataFrom);
+            $message ->setUpdated();
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($message);
+            $em->flush();
+
+            $result['message_id']=$message->getId();
+        }
+
+        return new JsonResponse($result);
+    }
 
 
 

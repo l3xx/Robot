@@ -31,14 +31,14 @@ class Message
     /**
      * @var string
      *
-     * @ORM\Column(name="message", type="string", length=255)
+     * @ORM\Column(name="message", type="text")
      */
     private $message;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="comment", type="string", length=255)
+     * @ORM\Column(name="comment", type="string", length=255, nullable=true)
      */
     private $comment;
 
@@ -51,6 +51,14 @@ class Message
      *
      */
     private $deviceId;
+
+    /**
+     * @var \DateTime
+     *
+     * @ORM\Column(name="updated", type="datetime")
+     */
+    private $updated;
+
 
     /**
      * Get id
@@ -148,6 +156,22 @@ class Message
     public function setDeviceId($deviceId)
     {
         $this->deviceId = $deviceId;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUpdated()
+    {
+        return $this->updated;
+    }
+
+    /**
+     *
+     */
+    public function setUpdated()
+    {
+        $this->updated = new \DateTime("now");
     }
 }
 
