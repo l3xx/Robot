@@ -32,7 +32,7 @@ class DefaultController extends Controller
         try {
             // Create Telegram API object
             $telegram =new Telegram($key, $bot_name);
-
+            $telegram->setContainer($this->getDoctrine());
             // Error, Debug and Raw Update logging
             //Longman\TelegramBot\TelegramLog::initialize($your_external_monolog_instance);
             //Longman\TelegramBot\TelegramLog::initErrorLog($path . '/' . $BOT_NAME . '_error.log');
@@ -143,43 +143,28 @@ class DefaultController extends Controller
     public function registerAction($guid=null)
     {
         $result=['guid'=>$guid];
-        if ($guid){
-            $device = new Device();
-            $device->setGuid($guid);
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($device);
-
-            // actually executes the queries (i.e. the INSERT query)
-            $em->flush();
-            $result['id']=$device->getId();
-        }
-
-        return new JsonResponse($result);
-    }
-
-
-    /**
-     * @Route("/get-guid/{guid}", name="smsreader_get_guid_device")
-     */
-    public function getIdAction($guid=null)
-    {
-        $result=['guid'=>$guid];
+        $iv=bin2hex(random_bytes(8));
         if ($guid){
             $device = $this->getDoctrine()
                 ->getRepository('LetunovskiymnSMSReaderBundle:Device')
                 ->findOneBy(['guid'=>$guid]);
+            if (!$device){
+                $device = new Device();
+                $device->setGuid($guid);
+                $device->setIv($iv);
+                $em = $this->getDoctrine()->getManager();
+                $em->persist($device);
 
-            if (!$device) {
-                throw $this->createNotFoundException(
-                    'No device found for id '.$guid
-                );
+                // actually executes the queries (i.e. the INSERT query)
+                $em->flush();
             }
             $result['id']=$device->getId();
+            $result['iv']=$device->getIv();
+
         }
 
         return new JsonResponse($result);
     }
-
 
     /**
      * @Route("/set-message/{guid}", name="smsreader_set_message")
@@ -220,7 +205,82 @@ class DefaultController extends Controller
     }
 
 
+    /**
+     * @Route("/decrypt-by-device/{guid}/{messageId}/{key}", name="decrypt_by_device_id_message")
+     * @param Request $request
+     * @param null $guid
+     * @param null $key
+     * @return JsonResponse
+     */
+    public function deCryptByDeviceIdAction(Request $request,$guid=null,$key=null, $messageId=0)
+    {
+        $result=[];
+        if (!empty($key) && !empty($guid) && !empty($messageId))
+        {
+            $key=$key.$key.$key."z";
+            /** @var Device $device */
+            $device = $this->getDoctrine()
+                ->getRepository('LetunovskiymnSMSReaderBundle:Device')
+                ->findOneBy(['guid'=>$guid]);
+
+            if (!$device) {
+                throw $this->createNotFoundException(
+                    'No device found for id '.$guid
+                );
+            }
+
+            /** @var Message $message */
+            $message = $this->getDoctrine()
+                ->getRepository('LetunovskiymnSMSReaderBundle:Message')
+                ->findOneBy(['deviceId'=>$device->getId(),'id'=>$messageId]);
+
+            if (!$message) {
+                throw $this->createNotFoundException(
+                    'Message not found'
+                );
+            }
+            $strSource = openssl_decrypt(base64_decode($message->getMessage()),
+                'AES-128-CTR',
+                $key,
+                true,$device->getIv());
+            $result['text']=$strSource;
+        }
+        return new JsonResponse($result);
+    }
 
 
+    /**
+     * @Route("/test-crypt/{str}", name="test_crypt_message")
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function testCryptAction(Request $request,$str=null)
+    {
+        $key='709717097170971z';
+//        $nonce=bin2hex(random_bytes(8));
+        $nonce="ccdc84ca5d167831";
+        $str = openssl_encrypt("русский текст", 'AES-128-CTR', $key, true,$nonce); // OpenSSL
+//        var_dump($str);
+//        $str = openssl_decrypt($str, 'AES-256-CTR', $key, true,$nonce); // OpenSSL
+        $result=['str'=>base64_encode($str),'nonce'=>$nonce];
+
+//        $result=['str'=>utf8_encode($str),'nonce'=>$nonce];
+        return new JsonResponse($result);
+    }
+
+
+    /**
+     * @Route("/decrypt/{iv}/{key}/{str}", name="decrypt_message")
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deCryptAction(Request $request,$iv=null,$key=null,$str=null)
+    {
+        $postDataMessage = base64_decode($str,true);
+        $str = openssl_decrypt($postDataMessage, 'AES-256-CTR', $key, true,$iv); // OpenSSL
+        $result=['str'=>$str,'str1'=>"Слово за слово",'iv'=>$iv,'key'=>$key];
+        return new JsonResponse($result);
+
+    }
 
 }

@@ -28,6 +28,21 @@ class Device
      */
     private $guid;
 
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="iv", type="string", length=255, unique=false)
+     */
+    private $iv;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="chat_id", type="string", length=255, unique=false)
+     */
+    private $chatId;
+
+
 
     /**
      * Get id
@@ -61,6 +76,38 @@ class Device
     public function getGuid()
     {
         return $this->guid;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIv()
+    {
+        return $this->iv;
+    }
+
+    /**
+     * @param string $iv
+     */
+    public function setIv($iv)
+    {
+        $this->iv = $iv;
+    }
+
+    /**
+     * @return string
+     */
+    public function getChatId()
+    {
+        return $this->chatId;
+    }
+
+    /**
+     * @param string $chatId
+     */
+    public function setChatId($chatId)
+    {
+        $this->chatId = $chatId;
     }
 }
 

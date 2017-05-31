@@ -15,6 +15,10 @@ use Longman\TelegramBot\Request;
 
 class Telegram extends \Longman\TelegramBot\Telegram
 {
+
+    private $container;
+
+
     /**
      * Process bot Update request
      *
@@ -65,5 +69,21 @@ class Telegram extends \Longman\TelegramBot\Telegram
         $this->getCommandsList();
 
         return $this->executeCommand($command);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getContainer()
+    {
+        return $this->container;
+    }
+
+    /**
+     * @param mixed $container
+     */
+    public function setContainer($container)
+    {
+        $this->container = $container;
     }
 }
