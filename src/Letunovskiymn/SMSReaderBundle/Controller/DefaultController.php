@@ -199,10 +199,45 @@ class DefaultController extends Controller
             $em->flush();
 
             $result['message_id']=$message->getId();
+
+            $key=$this->getParameter('smsreader_bot_api_key');
+            $bot_name=$this->getParameter('smsreader_bot_name');
+            $telegram =new Telegram($key, $bot_name);
+            $text='Есть новое сообщение от '.$postDataFrom.PHP_EOL;
+            $text='Чтобы получить введите код в форме ';
+
+            $result = \Longman\TelegramBot\Request::sendMessage(['chat_id' => $device->getChatId(), 'text' => $text]);
+
         }
 
         return new JsonResponse($result);
     }
+
+
+    /**
+     * @Route("/validation", name="validation_code")
+     * @param Request $request
+     *
+     */
+    public function validCodeAction(Request $request){
+//        $defaultData = array('message' => 'Type your message here');
+
+
+        $form = $this->createFormBuilder()
+            ->add('code', TextType::class)
+            ->add('email', EmailType::class)
+            ->add('message', TextareaType::class)
+            ->add('send', SubmitType::class)
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // data is an array with "name", "email", and "message" keys
+            $data = $form->getData();
+        }
+    }
+
 
 
     /**
@@ -266,6 +301,23 @@ class DefaultController extends Controller
 
 //        $result=['str'=>utf8_encode($str),'nonce'=>$nonce];
         return new JsonResponse($result);
+    }
+
+
+    /**
+     * @Route("/testSend", name="testSend_message")
+     */
+    public function testSendAction()
+    {
+
+        $key=$this->getParameter('smsreader_bot_api_key');
+        $bot_name=$this->getParameter('smsreader_bot_name');
+        $telegram =new Telegram($key, $bot_name);
+        $result = \Longman\TelegramBot\Request::sendMessage(['chat_id' => "133530807", 'text' => 'Your utf8 text 😜 ...']);
+
+
+        return new Response();
+
     }
 
 
