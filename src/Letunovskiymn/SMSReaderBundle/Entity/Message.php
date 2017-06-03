@@ -52,6 +52,14 @@ class Message
      */
     private $deviceId;
 
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="hash", type="text")
+     */
+    private $hash;
+
     /**
      * @var \DateTime
      *
@@ -172,6 +180,22 @@ class Message
     public function setUpdated()
     {
         $this->updated = new \DateTime("now");
+    }
+
+    /**
+     * @return string
+     */
+    public function getHash()
+    {
+        return $this->hash;
+    }
+
+    /**
+     * @param string $hash
+     */
+    public function setHash($hash)
+    {
+        $this->hash = $hash;
     }
 }
 

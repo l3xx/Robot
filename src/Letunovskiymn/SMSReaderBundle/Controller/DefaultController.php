@@ -10,9 +10,13 @@ use Longman\TelegramBot\Exception\TelegramLogException;
 use Longman\TelegramBot\TelegramLog;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class DefaultController extends Controller
 {
@@ -177,6 +181,7 @@ class DefaultController extends Controller
         $result=['guid'=>$guid];
         $postDataMessage = $request->request->get('message',null);
         $postDataFrom= $request->request->get('from',null);
+        $postDataHash= $request->request->get('hash',null);
 
         if ($guid){
             /** @var Device $device */
@@ -193,6 +198,7 @@ class DefaultController extends Controller
             $message ->setMessage($postDataMessage);
             $message ->setDeviceId($device);
             $message ->setFromUser($postDataFrom);
+            $message ->setHash($postDataHash);
             $message ->setUpdated();
             $em = $this->getDoctrine()->getManager();
             $em->persist($message);
@@ -200,12 +206,14 @@ class DefaultController extends Controller
 
             $result['message_id']=$message->getId();
 
+            $text ='Есть новое сообщение от '.$postDataFrom.PHP_EOL;
+            $text .='Чтобы получить введите код в форме '.PHP_EOL;
+            $text .=$this->generateUrl('validation_code', array('messageId' => $message->getId()),
+                UrlGeneratorInterface::ABSOLUTE_URL);
+
             $key=$this->getParameter('smsreader_bot_api_key');
             $bot_name=$this->getParameter('smsreader_bot_name');
             $telegram =new Telegram($key, $bot_name);
-            $text='Есть новое сообщение от '.$postDataFrom.PHP_EOL;
-            $text='Чтобы получить введите код в форме ';
-
             $result = \Longman\TelegramBot\Request::sendMessage(['chat_id' => $device->getChatId(), 'text' => $text]);
 
         }
@@ -215,33 +223,78 @@ class DefaultController extends Controller
 
 
     /**
-     * @Route("/validation", name="validation_code")
+     * @Route("/validation/{messageId}", name="validation_code")
      * @param Request $request
      *
+     * @param null $messageId
+     * @return Response
      */
-    public function validCodeAction(Request $request){
+    public function validCodeAction(Request $request,$messageId=null){
 //        $defaultData = array('message' => 'Type your message here');
+        /** @var Message $message */
+        $message = $this->getDoctrine()
+            ->getRepository('LetunovskiymnSMSReaderBundle:Message')
+            ->findOneBy(['id'=>$messageId]);
 
+        if (!$message) {
+            throw $this->createNotFoundException(
+                'Message not found'
+            );
+        }
 
+        /** @var Form $form */
         $form = $this->createFormBuilder()
-            ->add('code', TextType::class)
-            ->add('email', EmailType::class)
-            ->add('message', TextareaType::class)
+            ->add('code', IntegerType::class)
             ->add('send', SubmitType::class)
             ->getForm();
-
         $form->handleRequest($request);
-
+        $success='';
+        $messageSend='';
         if ($form->isSubmitted() && $form->isValid()) {
-            // data is an array with "name", "email", and "message" keys
             $data = $form->getData();
+            $text=$message->getMessage();
+
+            $hash=$message->getHash();
+
+            /** @var Device $device */
+            $device=$message->getDeviceId();
+
+            $key=$data['code'].$data['code'].$data['code'].'z';
+            $iv=$device->getIv();
+
+            if ( trim(base64_encode(base64_decode($text))) !== trim($text)){
+                $success="Not valid code";
+            } else {
+                $str = openssl_decrypt(base64_decode($text), 'AES-128-CTR', $key, true,$iv); // OpenSSL
+                if ($hash!=md5($str))
+                {
+                    $success="Not valid hash";
+                }
+                else
+                {
+                    $success='Code valid, message send';
+                    $key=$this->getParameter('smsreader_bot_api_key');
+                    $bot_name=$this->getParameter('smsreader_bot_name');
+                    $messageSend=$str;
+                    $telegram =new Telegram($key, $bot_name);
+                    $result = \Longman\TelegramBot\Request::sendMessage(
+                        ['chat_id' => $device->getChatId(), 'text' => $str]);
+
+                    $em = $this->getDoctrine()->getManager();
+                    $em->remove($message);
+                    $em->flush();
+
+                }
+            }
         }
+        return $this->render('LetunovskiymnSMSReaderBundle:Default:validCode.html.twig',
+            ['form'=>$form->createView(),'success'=>$success,'message'=>$messageSend]);
     }
 
 
 
     /**
-     * @Route("/decrypt-by-device/{guid}/{messageId}/{key}", name="decrypt_by_device_id_message")
+     * @Route("/decrypt-by-device/{guid}/{messageId}/{key}/", name="decrypt_by_device_id_message")
      * @param Request $request
      * @param null $guid
      * @param null $key
@@ -283,56 +336,5 @@ class DefaultController extends Controller
         return new JsonResponse($result);
     }
 
-
-    /**
-     * @Route("/test-crypt/{str}", name="test_crypt_message")
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function testCryptAction(Request $request,$str=null)
-    {
-        $key='709717097170971z';
-//        $nonce=bin2hex(random_bytes(8));
-        $nonce="ccdc84ca5d167831";
-        $str = openssl_encrypt("русский текст", 'AES-128-CTR', $key, true,$nonce); // OpenSSL
-//        var_dump($str);
-//        $str = openssl_decrypt($str, 'AES-256-CTR', $key, true,$nonce); // OpenSSL
-        $result=['str'=>base64_encode($str),'nonce'=>$nonce];
-
-//        $result=['str'=>utf8_encode($str),'nonce'=>$nonce];
-        return new JsonResponse($result);
-    }
-
-
-    /**
-     * @Route("/testSend", name="testSend_message")
-     */
-    public function testSendAction()
-    {
-
-        $key=$this->getParameter('smsreader_bot_api_key');
-        $bot_name=$this->getParameter('smsreader_bot_name');
-        $telegram =new Telegram($key, $bot_name);
-        $result = \Longman\TelegramBot\Request::sendMessage(['chat_id' => "133530807", 'text' => 'Your utf8 text 😜 ...']);
-
-
-        return new Response();
-
-    }
-
-
-    /**
-     * @Route("/decrypt/{iv}/{key}/{str}", name="decrypt_message")
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function deCryptAction(Request $request,$iv=null,$key=null,$str=null)
-    {
-        $postDataMessage = base64_decode($str,true);
-        $str = openssl_decrypt($postDataMessage, 'AES-256-CTR', $key, true,$iv); // OpenSSL
-        $result=['str'=>$str,'str1'=>"Слово за слово",'iv'=>$iv,'key'=>$key];
-        return new JsonResponse($result);
-
-    }
 
 }
