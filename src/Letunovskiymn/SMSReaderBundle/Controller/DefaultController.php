@@ -194,6 +194,9 @@ class DefaultController extends Controller
                     'No device found for id '.$guid
                 );
             }
+
+            $postDataMessage=trim(str_replace("\n", "", $postDataMessage));
+
             $message = new Message();
             $message ->setMessage($postDataMessage);
             $message ->setDeviceId($device);
