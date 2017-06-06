@@ -202,6 +202,8 @@ class DefaultController extends Controller
             $message ->setDeviceId($device);
             $message ->setFromUser($postDataFrom);
             $message ->setHash($postDataHash);
+            $message ->setDeleteHash(null);
+            $message ->setCount(0);
             $message ->setUpdated();
             $em = $this->getDoctrine()->getManager();
             $em->persist($message);
@@ -237,8 +239,8 @@ class DefaultController extends Controller
         /** @var Message $message */
         $message = $this->getDoctrine()
             ->getRepository('LetunovskiymnSMSReaderBundle:Message')
-            ->findOneBy(['id'=>$messageId]);
-
+            ->findOneBy(['id'=>$messageId,
+                'delete_hash'=>null]);
         if (!$message) {
             throw $this->createNotFoundException(
                 'Message not found'
@@ -254,6 +256,10 @@ class DefaultController extends Controller
         $success='';
         $messageSend='';
         if ($form->isSubmitted() && $form->isValid()) {
+            $key=$this->getParameter('smsreader_bot_api_key');
+            $bot_name=$this->getParameter('smsreader_bot_name');
+            $telegram =new Telegram($key, $bot_name);
+
             $data = $form->getData();
             $text=$message->getMessage();
 
@@ -264,26 +270,41 @@ class DefaultController extends Controller
 
             $key=$data['code'].$data['code'].$data['code'].'z';
             $iv=$device->getIv();
-
+            $em = $this->getDoctrine()->getManager();
             if ( trim(base64_encode(base64_decode($text))) !== trim($text)){
                 $success="Not valid code";
+                if ($this->addCount($message)){
+                $result = \Longman\TelegramBot\Request::sendMessage(
+                    ['chat_id' => $device->getChatId(), 'text' =>
+                        "Код введён не верно несколько раз для сообщение с номером ".$messageId.PHP_EOL.
+                        "Удалить сообщение с сервиса можно по ссылке: ".PHP_EOL.
+                    $this->generateUrl('delete_message_by_delete_hash', array('hash' => $message->getDeleteHash()),
+                        UrlGeneratorInterface::ABSOLUTE_URL)]
+                );
+            }
+
             } else {
                 $str = openssl_decrypt(base64_decode($text), 'AES-128-CTR', $key, true,$iv); // OpenSSL
                 if ($hash!=md5($str))
                 {
                     $success="Not valid hash";
+                    if ($this->addCount($message)){
+                        $result = \Longman\TelegramBot\Request::sendMessage(
+                            ['chat_id' => $device->getChatId(), 'text' =>
+                                "Код введён не верно несколько раз для сообщение с номером ".$messageId.PHP_EOL.
+                                "Удалить сообщение с сервиса можно по ссылке: ".PHP_EOL.
+                                $this->generateUrl('delete_message_by_delete_hash', array('hash' => $message->getDeleteHash()),
+                                    UrlGeneratorInterface::ABSOLUTE_URL)]
+                        );
+                    }
                 }
                 else
                 {
                     $success='Code valid, message send';
-                    $key=$this->getParameter('smsreader_bot_api_key');
-                    $bot_name=$this->getParameter('smsreader_bot_name');
                     $messageSend=$str;
-                    $telegram =new Telegram($key, $bot_name);
                     $result = \Longman\TelegramBot\Request::sendMessage(
                         ['chat_id' => $device->getChatId(), 'text' => $str]);
 
-                    $em = $this->getDoctrine()->getManager();
                     $em->remove($message);
                     $em->flush();
 
@@ -294,7 +315,58 @@ class DefaultController extends Controller
             ['form'=>$form->createView(),'success'=>$success,'message'=>$messageSend]);
     }
 
+    private function addCount(Message $message):bool {
+        $result=false;
+        $count=(int)$message->getCount();
+        $count++;
+        $message->setCount($count);
+        $em = $this->getDoctrine()->getManager();
+        if ($count==3){
+            $deleteHash=md5(time().rand(99,1000).$message->getHash());
+            $message->setDeleteHash($deleteHash);
+            $result=$deleteHash;
+        }
+        $em->persist($message);
+        $em->flush();
+        return $result;
+    }
 
+
+    /**
+     * @Route("/delete-message/{hash}/", name="delete_message_by_delete_hash")
+     * @param Request $request
+     * @param null $hash
+     * @return Response
+     */
+    public function deleteHashAction(Request $request,$hash=null)
+    {
+        /** @var Message $message */
+        $message = $this->getDoctrine()
+            ->getRepository('LetunovskiymnSMSReaderBundle:Message')
+            ->findOneBy(['delete_hash'=>$hash]);
+
+        if (!$message) {
+            throw $this->createNotFoundException(
+                'Message not found'
+            );
+        }
+
+        $key=$this->getParameter('smsreader_bot_api_key');
+        $bot_name=$this->getParameter('smsreader_bot_name');
+        $telegram =new Telegram($key, $bot_name);
+        $idMessage=$message->getId();
+
+        /** @var Device $device */
+        $device=$message->getDeviceId();
+
+        $em = $this->getDoctrine()->getManager();
+        $em->remove($message);
+        $em->flush();
+        $result = \Longman\TelegramBot\Request::sendMessage(['chat_id' => $device->getChatId(),
+            'text' => "Удалено сообщение ".$idMessage]);
+        return new Response();
+
+    }
 
     /**
      * @Route("/decrypt-by-device/{guid}/{messageId}/{key}/", name="decrypt_by_device_id_message")
