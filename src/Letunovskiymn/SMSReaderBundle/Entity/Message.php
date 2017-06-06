@@ -67,6 +67,14 @@ class Message
      */
     private $updated;
 
+    /**
+     * Счётчик количества не верных вводов пароля
+     *
+     * @var int
+     *
+     * @ORM\Column(name="count", type="integer")
+     */
+    private $count;
 
     /**
      * Get id
@@ -196,6 +204,22 @@ class Message
     public function setHash($hash)
     {
         $this->hash = $hash;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCount()
+    {
+        return $this->count;
+    }
+
+    /**
+     * @param int $count
+     */
+    public function setCount($count)
+    {
+        $this->count = $count;
     }
 }
 
