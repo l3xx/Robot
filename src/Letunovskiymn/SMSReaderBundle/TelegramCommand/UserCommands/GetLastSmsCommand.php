@@ -9,20 +9,21 @@
 namespace Longman\TelegramBot\Commands\UserCommands;
 
 
+use Doctrine\Bundle\DoctrineBundle\Registry;
 use Longman\TelegramBot\Commands\UserCommand;
 use Longman\TelegramBot\Entities\InlineKeyboard;
 use Longman\TelegramBot\Entities\Keyboard;
 use Longman\TelegramBot\Request;
 
-class GetsmsCommand extends UserCommand
+class GetLastSmsCommand extends UserCommand
 {
 
     /**#@+
      * {@inheritdoc}
      */
-    protected $name = 'getSms sms from phone';
-    protected $description = 'Return SMS by secret code';
-    protected $usage = '/getSms';
+    protected $name = 'getLastSms sms from phone';
+    protected $description = 'Return last SMS to chat';
+    protected $usage = '/getLastSms';
     protected $version = '0.1.0';
     protected $enabled = true;
     /**#@-*/
@@ -36,6 +37,15 @@ class GetsmsCommand extends UserCommand
     public function execute()
     {
         $chat_id = $this->getMessage()->getChat()->getId();
+        $message = $this->getMessage();
+        $textCommand = trim($message->getText(true));
+
+
+        /** @var Registry $registryDoctrine */
+        $registryDoctrine=$this->getTelegram()->getContainer();
+        $deviceDoctrine=$registryDoctrine->getRepository('LetunovskiymnSMSReaderBundle:Device')
+            ->findOneBy(['guid'=>base64_decode($textCommand,true)]);
+
 
         $switch_element = mt_rand(0, 9) < 5 ? 'true' : 'false';
 

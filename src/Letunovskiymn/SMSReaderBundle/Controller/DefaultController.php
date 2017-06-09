@@ -203,24 +203,11 @@ class DefaultController extends Controller
             $em = $this->getDoctrine()->getManager();
             $em->persist($message);
             $em->flush();
-
             $result['message_id']=$message->getId();
-
-            $text ='Есть новое сообщение от '.$postDataFrom.PHP_EOL;
-            $text .='Чтобы получить введите код в форме '.PHP_EOL;
-            $text .=$this->generateUrl('validation_code', array('messageId' => $message->getId()),
-                UrlGeneratorInterface::ABSOLUTE_URL);
-
-            $key=$this->getParameter('smsreader_bot_api_key');
-            $bot_name=$this->getParameter('smsreader_bot_name');
-            $telegram =new Telegram($key, $bot_name);
-            $result = \Longman\TelegramBot\Request::sendMessage(['chat_id' => $device->getChatId(), 'text' => $text]);
-
         }
 
         return new JsonResponse($result);
     }
-
 
     /**
      * @Route("/validation/{messageId}", name="validation_code")
