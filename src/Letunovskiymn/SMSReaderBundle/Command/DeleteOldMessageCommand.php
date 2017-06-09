@@ -31,7 +31,7 @@ class DeleteOldMessageCommand extends Command
     {
         $date = $input->getArgument('date',null);
         $date = new \DateTime($date);
-        $doctrine =$this->getApplication()->getKernel()->getContainer()->get('doctrine')->getEntityManager();;
+        $doctrine =$this->getApplication()->getKernel()->getContainer()->get('doctrine')->getEntityManager();
         $query = $doctrine->createQuery(
             'SELECT m
                 FROM LetunovskiymnSMSReaderBundle:Message m
