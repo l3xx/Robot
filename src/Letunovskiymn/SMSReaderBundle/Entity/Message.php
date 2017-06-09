@@ -56,9 +56,17 @@ class Message
     /**
      * @var string
      *
-     * @ORM\Column(name="hash", type="text")
+     * @ORM\Column(name="hash", type="string", length=255, nullable=true)
      */
     private $hash;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="delete_hash", type="string", length=255, nullable=true)
+     */
+    private $delete_hash;
+
 
     /**
      * @var \DateTime
@@ -67,6 +75,14 @@ class Message
      */
     private $updated;
 
+    /**
+     * Счётчик количества не верных вводов пароля
+     *
+     * @var int
+     *
+     * @ORM\Column(name="count", type="integer")
+     */
+    private $count;
 
     /**
      * Get id
@@ -196,6 +212,38 @@ class Message
     public function setHash($hash)
     {
         $this->hash = $hash;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCount()
+    {
+        return $this->count;
+    }
+
+    /**
+     * @param int $count
+     */
+    public function setCount($count)
+    {
+        $this->count = $count;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDeleteHash()
+    {
+        return $this->delete_hash;
+    }
+
+    /**
+     * @param string $delete_hash
+     */
+    public function setDeleteHash($delete_hash)
+    {
+        $this->delete_hash = $delete_hash;
     }
 }
 
