@@ -25,17 +25,17 @@ class DefaultController extends Controller
      */
     public function indexAction()
     {
-        $key=$this->getParameter('smsreader_bot_api_key');
-        $bot_name=$this->getParameter('smsreader_bot_name');
+        $key = $this->getParameter('smsreader_bot_api_key');
+        $bot_name = $this->getParameter('smsreader_bot_name');
 
         // Define a path for your custom commands
-        $commands_path = realpath(__DIR__.DIRECTORY_SEPARATOR."..").DIRECTORY_SEPARATOR.
-            "TelegramCommand".DIRECTORY_SEPARATOR.
+        $commands_path = realpath(__DIR__ . DIRECTORY_SEPARATOR . "..") . DIRECTORY_SEPARATOR .
+            "TelegramCommand" . DIRECTORY_SEPARATOR .
             "UserCommands";
 
         try {
             // Create Telegram API object
-            $telegram =new Telegram($key, $bot_name);
+            $telegram = new Telegram($key, $bot_name);
             $telegram->setContainer($this->getDoctrine());
             // Error, Debug and Raw Update logging
             //Longman\TelegramBot\TelegramLog::initialize($your_external_monolog_instance);
@@ -50,7 +50,7 @@ class DefaultController extends Controller
             //$telegram->enableMySql($mysql_credentials, $BOT_NAME . '_');
 
             // Add an additional commands path
-            $telegram->addCommandsPath($commands_path,true);
+            $telegram->addCommandsPath($commands_path, true);
 
 
             // Enable admin user(s)
@@ -92,16 +92,15 @@ class DefaultController extends Controller
     }
 
 
-
     /**
      * @Route("/set", name="letunovskiymn_sms_reader_bot_set")
      */
     public function setAction()
     {
-        $key=$this->getParameter('smsreader_bot_api_key');
-        $bot_name=$this->getParameter('smsreader_bot_name');
-        $hook_url=$this->getParameter('smsreader_bot_url'). $this->generateUrl('smsreader_telegram_bot_index');
-        echo $hook_url."\n";
+        $key = $this->getParameter('smsreader_bot_api_key');
+        $bot_name = $this->getParameter('smsreader_bot_name');
+        $hook_url = $this->getParameter('smsreader_bot_url') . $this->generateUrl('smsreader_telegram_bot_index');
+        echo $hook_url . "\n";
         try {
             $telegram = new Telegram($key, $bot_name);
 
@@ -119,13 +118,14 @@ class DefaultController extends Controller
 
         return new Response();
     }
+
     /**
      * @Route("/unset", name="letunovskiymn_ms_reader_bot_unset")
      */
     public function unsetAction()
     {
-        $key=$this->getParameter('smsreader_bot_api_key');
-        $bot_name=$this->getParameter('smsreader_bot_name');
+        $key = $this->getParameter('smsreader_bot_api_key');
+        $bot_name = $this->getParameter('smsreader_bot_name');
 
         try {
             // Create Telegram API object
@@ -144,15 +144,15 @@ class DefaultController extends Controller
     /**
      * @Route("/reg/{guid}", name="smsreader_register_device")
      */
-    public function registerAction($guid=null)
+    public function registerAction($guid = null)
     {
-        $result=['guid'=>$guid];
-        $iv=bin2hex(random_bytes(8));
-        if ($guid){
+        $result = ['guid' => $guid];
+        $iv = bin2hex(random_bytes(8));
+        if ($guid) {
             $device = $this->getDoctrine()
                 ->getRepository('LetunovskiymnSMSReaderBundle:Device')
-                ->findOneBy(['guid'=>$guid]);
-            if (!$device){
+                ->findOneBy(['guid' => $guid]);
+            if (!$device) {
                 $device = new Device();
                 $device->setGuid($guid);
                 $device->setIv($iv);
@@ -162,8 +162,8 @@ class DefaultController extends Controller
                 // actually executes the queries (i.e. the INSERT query)
                 $em->flush();
             }
-            $result['id']=$device->getId();
-            $result['iv']=$device->getIv();
+            $result['id'] = $device->getId();
+            $result['iv'] = $device->getIv();
 
         }
 
@@ -176,39 +176,39 @@ class DefaultController extends Controller
      * @param null $guid
      * @return JsonResponse
      */
-    public function setMessageAction(Request $request,$guid=null)
+    public function setMessageAction(Request $request, $guid = null)
     {
-        $result=['guid'=>$guid];
-        $postDataMessage = $request->request->get('message',null);
-        $postDataFrom= $request->request->get('from',null);
-        $postDataHash= $request->request->get('hash',null);
+        $result = ['guid' => $guid];
+        $postDataMessage = $request->request->get('message', null);
+        $postDataFrom = $request->request->get('from', null);
+        $postDataHash = $request->request->get('hash', null);
 
-        if ($guid){
+        if ($guid) {
             /** @var Device $device */
             $device = $this->getDoctrine()
                 ->getRepository('LetunovskiymnSMSReaderBundle:Device')
-                ->findOneBy(['guid'=>$guid]);
+                ->findOneBy(['guid' => $guid]);
 
             if (!$device) {
                 throw $this->createNotFoundException(
-                    'No device found for id '.$guid
+                    'No device found for id ' . $guid
                 );
             }
 
-            $postDataMessage=trim(str_replace("\n", "", $postDataMessage));
+            $postDataMessage = trim(str_replace("\n", "", $postDataMessage));
 
             $message = new Message();
-            $message ->setMessage($postDataMessage);
-            $message ->setDeviceId($device);
-            $message ->setFromUser($postDataFrom);
-            $message ->setHash($postDataHash);
-            $message ->setDeleteHash(null);
-            $message ->setCount(0);
-            $message ->setUpdated();
+            $message->setMessage($postDataMessage);
+            $message->setDeviceId($device);
+            $message->setFromUser($postDataFrom);
+            $message->setHash($postDataHash);
+            $message->setDeleteHash(null);
+            $message->setCount(0);
+            $message->setUpdated();
             $em = $this->getDoctrine()->getManager();
             $em->persist($message);
             $em->flush();
-            $result['message_id']=$message->getId();
+            $result['message_id'] = $message->getId();
         }
 
         return new JsonResponse($result);
@@ -221,13 +221,14 @@ class DefaultController extends Controller
      * @param null $messageId
      * @return Response
      */
-    public function validCodeAction(Request $request,$messageId=null){
+    public function validCodeAction(Request $request, $messageId = null)
+    {
 //        $defaultData = array('message' => 'Type your message here');
         /** @var Message $message */
         $message = $this->getDoctrine()
             ->getRepository('LetunovskiymnSMSReaderBundle:Message')
-            ->findOneBy(['id'=>$messageId,
-                'delete_hash'=>null]);
+            ->findOneBy(['id' => $messageId,
+                'delete_hash' => null]);
         if (!$message) {
             throw $this->createNotFoundException(
                 'Message not found'
@@ -240,55 +241,52 @@ class DefaultController extends Controller
             ->add('send', SubmitType::class)
             ->getForm();
         $form->handleRequest($request);
-        $success='';
-        $messageSend='';
+        $success = '';
+        $messageSend = '';
         if ($form->isSubmitted() && $form->isValid()) {
-            $key=$this->getParameter('smsreader_bot_api_key');
-            $bot_name=$this->getParameter('smsreader_bot_name');
-            $telegram =new Telegram($key, $bot_name);
+            $key = $this->getParameter('smsreader_bot_api_key');
+            $bot_name = $this->getParameter('smsreader_bot_name');
+            $telegram = new Telegram($key, $bot_name);
 
             $data = $form->getData();
-            $text=$message->getMessage();
+            $text = $message->getMessage();
 
-            $hash=$message->getHash();
+            $hash = $message->getHash();
 
             /** @var Device $device */
-            $device=$message->getDeviceId();
+            $device = $message->getDeviceId();
 
-            $key=$data['code'].$data['code'].$data['code'].'z';
-            $iv=$device->getIv();
+            $key = $data['code'] . $data['code'] . $data['code'] . 'z';
+            $iv = $device->getIv();
             $em = $this->getDoctrine()->getManager();
-            if ( trim(base64_encode(base64_decode($text))) !== trim($text)){
-                $success="Not valid code";
-                if ($this->addCount($message)){
-                $result = \Longman\TelegramBot\Request::sendMessage(
-                    ['chat_id' => $device->getChatId(), 'text' =>
-                        "Код введён не верно несколько раз для сообщение с номером ".$messageId.PHP_EOL.
-                        "Удалить сообщение с сервиса можно по ссылке: ".PHP_EOL.
-                    $this->generateUrl('delete_message_by_delete_hash', array('hash' => $message->getDeleteHash()),
-                        UrlGeneratorInterface::ABSOLUTE_URL)]
-                );
-            }
+            if (trim(base64_encode(base64_decode($text))) !== trim($text)) {
+                $success = "Not valid code";
+                if ($this->addCount($message)) {
+                    $result = \Longman\TelegramBot\Request::sendMessage(
+                        ['chat_id' => $device->getChatId(), 'text' =>
+                            "Код введён не верно несколько раз для сообщение с номером " . $messageId . PHP_EOL .
+                            "Удалить сообщение с сервиса можно по ссылке: " . PHP_EOL .
+                            $this->generateUrl('delete_message_by_delete_hash', array('hash' => $message->getDeleteHash()),
+                                UrlGeneratorInterface::ABSOLUTE_URL)]
+                    );
+                }
 
             } else {
-                $str = openssl_decrypt(base64_decode($text), 'AES-128-CTR', $key, true,$iv); // OpenSSL
-                if ($hash!=md5($str))
-                {
-                    $success="Not valid hash";
-                    if ($this->addCount($message)){
+                $str = openssl_decrypt(base64_decode($text), 'AES-128-CTR', $key, true, $iv); // OpenSSL
+                if ($hash != md5($str)) {
+                    $success = "Not valid hash";
+                    if ($this->addCount($message)) {
                         $result = \Longman\TelegramBot\Request::sendMessage(
                             ['chat_id' => $device->getChatId(), 'text' =>
-                                "Код введён не верно несколько раз для сообщение с номером ".$messageId.PHP_EOL.
-                                "Удалить сообщение с сервиса можно по ссылке: ".PHP_EOL.
+                                "Код введён не верно несколько раз для сообщение с номером " . $messageId . PHP_EOL .
+                                "Удалить сообщение с сервиса можно по ссылке: " . PHP_EOL .
                                 $this->generateUrl('delete_message_by_delete_hash', array('hash' => $message->getDeleteHash()),
                                     UrlGeneratorInterface::ABSOLUTE_URL)]
                         );
                     }
-                }
-                else
-                {
-                    $success='Code valid, message send';
-                    $messageSend=$str;
+                } else {
+                    $success = 'Code valid, message send';
+                    $messageSend = $str;
                     $result = \Longman\TelegramBot\Request::sendMessage(
                         ['chat_id' => $device->getChatId(), 'text' => $str]);
 
@@ -299,19 +297,20 @@ class DefaultController extends Controller
             }
         }
         return $this->render('LetunovskiymnSMSReaderBundle:Default:validCode.html.twig',
-            ['form'=>$form->createView(),'success'=>$success,'message'=>$messageSend]);
+            ['form' => $form->createView(), 'success' => $success, 'message' => $messageSend]);
     }
 
-    private function addCount(Message $message):bool {
-        $result=false;
-        $count=(int)$message->getCount();
+    private function addCount(Message $message): bool
+    {
+        $result = false;
+        $count = (int)$message->getCount();
         $count++;
         $message->setCount($count);
         $em = $this->getDoctrine()->getManager();
-        if ($count==3){
-            $deleteHash=md5(time().rand(99,1000).$message->getHash());
+        if ($count == 3) {
+            $deleteHash = md5(time() . rand(99, 1000) . $message->getHash());
             $message->setDeleteHash($deleteHash);
-            $result=$deleteHash;
+            $result = $deleteHash;
         }
         $em->persist($message);
         $em->flush();
@@ -325,12 +324,12 @@ class DefaultController extends Controller
      * @param null $hash
      * @return Response
      */
-    public function deleteHashAction(Request $request,$hash=null)
+    public function deleteHashAction(Request $request, $hash = null)
     {
         /** @var Message $message */
         $message = $this->getDoctrine()
             ->getRepository('LetunovskiymnSMSReaderBundle:Message')
-            ->findOneBy(['delete_hash'=>$hash]);
+            ->findOneBy(['delete_hash' => $hash]);
 
         if (!$message) {
             throw $this->createNotFoundException(
@@ -338,19 +337,19 @@ class DefaultController extends Controller
             );
         }
 
-        $key=$this->getParameter('smsreader_bot_api_key');
-        $bot_name=$this->getParameter('smsreader_bot_name');
-        $telegram =new Telegram($key, $bot_name);
-        $idMessage=$message->getId();
+        $key = $this->getParameter('smsreader_bot_api_key');
+        $bot_name = $this->getParameter('smsreader_bot_name');
+        $telegram = new Telegram($key, $bot_name);
+        $idMessage = $message->getId();
 
         /** @var Device $device */
-        $device=$message->getDeviceId();
+        $device = $message->getDeviceId();
 
         $em = $this->getDoctrine()->getManager();
         $em->remove($message);
         $em->flush();
         $result = \Longman\TelegramBot\Request::sendMessage(['chat_id' => $device->getChatId(),
-            'text' => "Удалено сообщение ".$idMessage]);
+            'text' => "Удалено сообщение " . $idMessage]);
         return new Response();
 
     }
@@ -362,27 +361,26 @@ class DefaultController extends Controller
      * @param null $key
      * @return JsonResponse
      */
-    public function deCryptByDeviceIdAction(Request $request,$guid=null,$key=null, $messageId=0)
+    public function deCryptByDeviceIdAction(Request $request, $guid = null, $key = null, $messageId = 0)
     {
-        $result=[];
-        if (!empty($key) && !empty($guid) && !empty($messageId))
-        {
-            $key=$key.$key.$key."z";
+        $result = [];
+        if (!empty($key) && !empty($guid) && !empty($messageId)) {
+            $key = $key . $key . $key . "z";
             /** @var Device $device */
             $device = $this->getDoctrine()
                 ->getRepository('LetunovskiymnSMSReaderBundle:Device')
-                ->findOneBy(['guid'=>$guid]);
+                ->findOneBy(['guid' => $guid]);
 
             if (!$device) {
                 throw $this->createNotFoundException(
-                    'No device found for id '.$guid
+                    'No device found for id ' . $guid
                 );
             }
 
             /** @var Message $message */
             $message = $this->getDoctrine()
                 ->getRepository('LetunovskiymnSMSReaderBundle:Message')
-                ->findOneBy(['deviceId'=>$device->getId(),'id'=>$messageId]);
+                ->findOneBy(['deviceId' => $device->getId(), 'id' => $messageId]);
 
             if (!$message) {
                 throw $this->createNotFoundException(
@@ -392,8 +390,8 @@ class DefaultController extends Controller
             $strSource = openssl_decrypt(base64_decode($message->getMessage()),
                 'AES-128-CTR',
                 $key,
-                true,$device->getIv());
-            $result['text']=$strSource;
+                true, $device->getIv());
+            $result['text'] = $strSource;
         }
         return new JsonResponse($result);
     }
