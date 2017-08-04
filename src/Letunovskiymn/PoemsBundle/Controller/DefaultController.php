@@ -33,6 +33,10 @@ class DefaultController extends Controller
      *         400 = "Duplicate phrase or database error.",
      *         406 = "NULL VALUES ARE NOT ALLOWED.",
      *      },
+     *     parameters={
+     *      {"name"="position", "dataType"="integer", "required"=true, "description"="Position in poem"},
+     *      {"name"="text", "dataType"="string", "required"=true, "description"="Text phrase"}
+     *      }
      * )
      * @Rest\Post("/phrase")
      * @param Request $request
