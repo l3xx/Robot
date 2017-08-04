@@ -18,6 +18,11 @@ class AppKernel extends Kernel
             new AppBundle\AppBundle(),
             new Letunovskiymn\KorablikBundle\LetunovskiymnKorablikBundle(),
             new Letunovskiymn\SMSReaderBundle\LetunovskiymnSMSReaderBundle(),
+            new Letunovskiymn\PoemsBundle\LetunovskiymnPoemsBundle(),
+            new FOS\RestBundle\FOSRestBundle(),
+            new JMS\SerializerBundle\JMSSerializerBundle(),
+            new Nelmio\ApiDocBundle\NelmioApiDocBundle(),
+            new Nelmio\CorsBundle\NelmioCorsBundle(),
         ];
 
         if (in_array($this->getEnvironment(), ['dev', 'test'], true)) {

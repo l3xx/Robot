@@ -1,3 +1,12 @@
+NelmioApiDocBundle:
+    resource: "@NelmioApiDocBundle/Resources/config/routing.yml"
+    prefix:   /api/doc
+
+letunovskiymn_poems:
+    resource: "@LetunovskiymnPoemsBundle/Controller/"
+    type:     annotation
+    prefix:   /poems
+
 letunovskiymn_sms_reader:
     resource: "@LetunovskiymnSMSReaderBundle/Controller/"
     type:     annotation

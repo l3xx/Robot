@@ -13,35 +13,25 @@ use Longman\TelegramBot\Exception\TelegramLogException;
 use Longman\TelegramBot\TelegramLog;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Process\Process;
 
 
-class TelegramBotController extends Controller
+class TelegramZabbixBotController extends Controller
 {
     /**
-     * @Route("/bot", name="letunovskiymn_korablik_telegram_bot")
+     * @Route("/bot", name="letunovskiymn_zabbix_telegram_bot")
      */
     public function indexAction()
     {
         // Add you bot's API key and name
-        $key=$this->getParameter('korablik_bot_api_key');
-        $bot_name=$this->getParameter('korablik_bot_name');
+        $key=$this->getParameter('zabbix_bot_api_key');
+        $bot_name=$this->getParameter('zabbix_bot_name');
 
         // Define a path for your custom commands
-        $commands_path = realpath(__DIR__.DIRECTORY_SEPARATOR."..").DIRECTORY_SEPARATOR."TelegramCommand".DIRECTORY_SEPARATOR;
+        $commands_path = realpath(__DIR__.DIRECTORY_SEPARATOR."..").DIRECTORY_SEPARATOR."TelegramZabbixCommand".DIRECTORY_SEPARATOR;
 //        var_dump($commands_path);
-        // Enter your MySQL database credentials
-        //$mysql_credentials = [
-        //    'host'     => 'localhost',
-        //    'user'     => 'dbuser',
-        //    'password' => 'dbpass',
-        //    'database' => 'dbname',
-        //];
-
-
-        $pathExe=$this->container->get('kernel')->locateResource('@LetunovskiymnKorablikBundle').'Ansible';
-//
         try {
             // Create Telegram API object
             $telegram =new Telegram($key, $bot_name);
@@ -99,15 +89,42 @@ class TelegramBotController extends Controller
         return new Response();
     }
 
+    /**
+     * @Route("/send", name="letunovskiymn_zabbix_telegram_bot_send")
+     */
+    public function sendAction(Request $request)
+    {
+        $keyClient = $request->get('key','');
+        $message = $request->get('message','Your utf8 text 😜 ...');
+        $subject = $request->get('subject','');
+
+        $key=$this->getParameter('zabbix_bot_api_key');
+        $bot_name=$this->getParameter('zabbix_bot_name');
+        $telegram =new Telegram($key, $bot_name);
+        $telegram->setContainer($this->container);
+
+
+        $chatKeyId=$this->getDoctrine()
+            ->getRepository('LetunovskiymnKorablikBundle:KeysBot')
+            ->findOneBy(['keyClient' => $keyClient]);
+        if ($chatKeyId)
+        {
+            $result = \Longman\TelegramBot\Request::sendMessage(['chat_id' => $chatKeyId->getChatId(), 'text' => $subject.$message]);
+        }
+
+        return new Response();
+    }
+
+
 
     /**
-     * @Route("/set", name="letunovskiymn_korablik_telegram_bot_set")
+     * @Route("/set", name="letunovskiymn_zabbix_telegram_bot_set")
      */
     public function setAction()
     {
-        $key=$this->getParameter('korablik_bot_api_key');
-        $bot_name=$this->getParameter('korablik_bot_name');
-        $hook_url=$this->getParameter('korablik_bot_url'). $this->generateUrl('letunovskiymn_korablik_telegram_bot');
+        $key=$this->getParameter('zabbix_bot_api_key');
+        $bot_name=$this->getParameter('zabbix_bot_name');
+        $hook_url=$this->getParameter('zabbix_bot_url'). $this->generateUrl('letunovskiymn_zabbix_telegram_bot');
         echo $hook_url."\n";
         try {
         $telegram = new Telegram($key, $bot_name);
@@ -127,12 +144,12 @@ class TelegramBotController extends Controller
         return new Response();
     }
     /**
-     * @Route("/unset", name="letunovskiymn_korablik_telegram_bot_unset")
+     * @Route("/unset", name="letunovskiymn_zabbix_telegram_bot_unset")
      */
     public function unsetAction()
     {
-        $key=$this->getParameter('korablik_bot_api_key');
-        $bot_name=$this->getParameter('korablik_bot_name');
+        $key=$this->getParameter('zabbix_bot_api_key');
+        $bot_name=$this->getParameter('zabbix_bot_name');
 
         try {
             // Create Telegram API object
